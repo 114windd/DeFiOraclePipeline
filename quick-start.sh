@@ -15,7 +15,7 @@ NC='\033[0m'
 echo -e "${BLUE}🚀 Quick Start - Oracle Pipeline${NC}"
 
 # Set private key
-export ETH_PRIVATE_KEY="0x7c6fffad1d9b2ab7b415e9d85f134540bffd2637cd5ea566adaa963049e41f58"
+export ETH_PRIVATE_KEY=""
 
 echo -e "${YELLOW}Setting up environment...${NC}"
 

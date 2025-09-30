@@ -25,9 +25,11 @@ contract OracleTest is Test {
         assertEq(oracle.owner(), owner);
         assertEq(oracle.updater(), updater);
         assertFalse(oracle.paused());
-        assertEq(oracle.latestPrice().price, 0);
-        assertEq(oracle.latestPrice().timestamp, 0);
-        assertEq(oracle.latestPrice().roundId, 0);
+        
+        (uint256 price, uint256 timestamp, uint256 roundId) = oracle.latestPrice();
+        assertEq(price, 0);
+        assertEq(timestamp, 0);
+        assertEq(roundId, 0);
     }
     
     function testUpdatePrice() public {
@@ -54,7 +56,7 @@ contract OracleTest is Test {
     }
     
     function testUpdatePriceTooLow() public {
-        uint256 lowPrice = 0.5 * 10**PRICE_DECIMALS; // $0.50
+        uint256 lowPrice = 5 * 10**(PRICE_DECIMALS - 1); // $0.50
         
         vm.prank(updater);
         vm.expectRevert("Oracle: price too low");
@@ -109,7 +111,7 @@ contract OracleTest is Test {
     }
     
     function testIsStale() public {
-        // Initially stale (no price set)
+        // Initially stale (no price set, timestamp = 0)
         assertTrue(oracle.isStale());
         
         // Set a price
@@ -210,5 +212,8 @@ contract OracleTest is Test {
             assertEq(roundId, i + 1);
         }
     }
+    
+    // Allow the test contract to receive ETH
+    receive() external payable {}
 }
 

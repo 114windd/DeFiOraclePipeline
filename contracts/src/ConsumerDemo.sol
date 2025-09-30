@@ -62,7 +62,7 @@ contract ConsumerDemo is Ownable, Pausable, ReentrancyGuard {
      * @dev Constructor sets the Oracle contract address
      * @param _oracle Address of the Oracle contract
      */
-    constructor(address _oracle) {
+    constructor(address payable _oracle) {
         require(_oracle != address(0), "ConsumerDemo: oracle cannot be zero address");
         oracle = Oracle(_oracle);
     }

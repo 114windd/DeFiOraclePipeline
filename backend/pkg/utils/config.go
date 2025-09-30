@@ -34,6 +34,11 @@ type Config struct {
 	// Cache configuration
 	CacheExpiration time.Duration
 
+	// Blockchain configuration
+	BlockchainRPCURL     string
+	OracleContractAddr   string
+	BlockchainPrivateKey string
+
 	// Logging
 	LogLevel string
 }
@@ -52,6 +57,9 @@ func LoadConfig() (*Config, error) {
 		FetchTimeout:         getDurationEnv("FETCH_TIMEOUT", "10s"),
 		PriceChangeThreshold: getFloatEnv("PRICE_CHANGE_THRESHOLD", 0.005), // 0.5%
 		CacheExpiration:      getDurationEnv("CACHE_EXPIRATION", "1h"),
+		BlockchainRPCURL:     getEnv("BLOCKCHAIN_RPC_URL", "http://localhost:8545"),
+		OracleContractAddr:   getEnv("ORACLE_CONTRACT_ADDR", "0x5FbDB2315678afecb367f032d93F642f64180aa3"),
+		BlockchainPrivateKey: getEnv("BLOCKCHAIN_PRIVATE_KEY", ""),
 		LogLevel:             getEnv("LOG_LEVEL", "info"),
 	}
 
@@ -139,4 +147,3 @@ func getIntEnv(key string, defaultValue int) int {
 
 	return intValue
 }
-

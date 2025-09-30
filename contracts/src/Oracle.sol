@@ -144,6 +144,10 @@ contract Oracle is Ownable, Pausable, ReentrancyGuard {
      * @return True if price is older than MAX_AGE
      */
     function isStale() external view returns (bool) {
+        // If no price has been set (timestamp = 0), consider it stale
+        if (latestPrice.timestamp == 0) {
+            return true;
+        }
         return block.timestamp - latestPrice.timestamp > MAX_AGE;
     }
 

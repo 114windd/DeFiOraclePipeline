@@ -27,7 +27,7 @@ contract ConsumerDemoTest is Test {
         authorizedUser = makeAddr("authorizedUser");
         
         oracle = new Oracle(updater);
-        consumer = new ConsumerDemo(address(oracle));
+        consumer = new ConsumerDemo(payable(address(oracle)));
         
         // Set initial price
         vm.prank(updater);
@@ -68,6 +68,9 @@ contract ConsumerDemoTest is Test {
     }
     
     function testCreatePositionExcessiveAmount() public {
+        // Give user enough ETH to send 101 ether
+        vm.deal(user, 200 ether);
+        
         vm.prank(user);
         vm.expectRevert("ConsumerDemo: amount too high");
         consumer.createPosition{value: 101 ether}(STOP_LOSS_PRICE, ALERT_PRICE);
@@ -309,5 +312,8 @@ contract ConsumerDemoTest is Test {
         vm.prank(authorizedUser);
         consumer.triggerAlert(user);
     }
+    
+    // Allow the test contract to receive ETH
+    receive() external payable {}
 }
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/114windd/DeFiOraclePipeline.git/backend/pkg/api"
+	"github.com/114windd/DeFiOraclePipeline.git/backend/pkg/blockchain"
 	"github.com/114windd/DeFiOraclePipeline.git/backend/pkg/cache"
 	"github.com/114windd/DeFiOraclePipeline.git/backend/pkg/fetcher"
 	"github.com/114windd/DeFiOraclePipeline.git/backend/pkg/metrics"
@@ -44,6 +45,19 @@ func main() {
 	}
 	defer publisher.Close()
 
+	// Initialize real blockchain client
+	blockchainConfig := &blockchain.Config{
+		RPCURL:       config.BlockchainRPCURL,
+		ContractAddr: config.OracleContractAddr,
+		PrivateKey:   config.BlockchainPrivateKey,
+		GasLimit:     100000,
+	}
+	blockchainClient, err := blockchain.NewRealClient(blockchainConfig)
+	if err != nil {
+		log.Fatalf("Failed to initialize blockchain client: %v", err)
+	}
+	defer blockchainClient.Close()
+
 	metrics := metrics.NewMetrics()
 	normalizer := normalizer.NewDefaultNormalizer()
 	fetcher := fetcher.NewFetcher(config.CoinGeckoURL, config.FetchTimeout)
@@ -56,7 +70,7 @@ func main() {
 	defer cancel()
 
 	// Start price fetching goroutine
-	go startPriceFetcher(ctx, fetcher, normalizer, cache, storage, publisher, metrics, config)
+	go startPriceFetcher(ctx, fetcher, normalizer, cache, storage, publisher, metrics, config, blockchainClient)
 
 	// Start HTTP server
 	go func() {
@@ -89,6 +103,7 @@ func startPriceFetcher(
 	publisher *publisher.Publisher,
 	metrics *metrics.Metrics,
 	config *utils.Config,
+	blockchainClient *blockchain.RealClient,
 ) {
 	ticker := time.NewTicker(config.FetchInterval)
 	defer ticker.Stop()
@@ -101,7 +116,7 @@ func startPriceFetcher(
 			log.Println("Price fetcher stopped")
 			return
 		case <-ticker.C:
-			fetchAndProcessPrice(fetcher, normalizer, cache, storage, publisher, metrics, config)
+			fetchAndProcessPrice(fetcher, normalizer, cache, storage, publisher, metrics, config, blockchainClient)
 		}
 	}
 }
@@ -115,6 +130,7 @@ func fetchAndProcessPrice(
 	publisher *publisher.Publisher,
 	metrics *metrics.Metrics,
 	config *utils.Config,
+	blockchainClient *blockchain.RealClient,
 ) {
 	start := time.Now()
 
@@ -173,9 +189,16 @@ func fetchAndProcessPrice(
 		metrics.RecordPriceUpdate("coingecko", "published")
 	}
 
+	// Update blockchain Oracle contract
+	if err := blockchainClient.UpdateOraclePrice(normalizedPrice); err != nil {
+		log.Printf("Failed to update blockchain Oracle: %v", err)
+		// Don't fail the entire process if blockchain update fails
+	} else {
+		log.Printf("Successfully updated blockchain Oracle with price: $%.2f", normalizedPrice)
+	}
+
 	// Update price age metric
 	metrics.RecordPriceAge(0, "coingecko") // Just updated, so age is 0
 
 	log.Printf("Successfully processed price: $%.2f", normalizedPrice)
 }
-

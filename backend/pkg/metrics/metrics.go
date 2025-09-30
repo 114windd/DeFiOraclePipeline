@@ -222,4 +222,3 @@ func (m *Metrics) SetActiveConnections(count float64) {
 func (m *Metrics) SetMemoryUsage(bytes float64) {
 	m.MemoryUsage.Set(bytes)
 }
-
